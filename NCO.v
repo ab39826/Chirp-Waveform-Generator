@@ -1,0 +1,104 @@
+// Sine wave generator
+// Phase incremented, quarter LUT, Numerically Controlled Oscillator
+//   16-bit signed output amplitude
+//   N-bit input frequency control
+//   frequency = clk * ctrl / 2^32
+
+module NCO #(N = 32)(
+  input clk,                 // external clock signal
+  input rst,                 // reset signal for NCO module
+  input [N-1:0] ctrl,        // frequency control word
+  output reg [15:0] sin_out, // signed amplitude of sine wave
+);
+
+// Phase Accumulator
+reg [N-1:0] phase;
+
+always @(posedge clk) begin
+  if (rst)
+    phase <= {N{1'b0}};
+  else
+    phase <= phase + ctrl;
+end
+
+// Quarter Sine Look-up Table
+reg [5:0] sin_lut_sel;
+reg [15:0] sin_lut_val;
+
+always @(*) begin
+  sin_lut_sel <= phase[N-2] ? ~(phase[N-3:N-8]-1'b1) : phase[N-3:N-8];
+  if (phase[N-2] & ~|phase[N-3:N-8]) begin
+    sin_out <= phase[N-1] ? 16'b10000000_00000001 : 16'b01111111_11111111;
+  end else begin
+    sin_out <= phase[N-1] ? (~sin_lut_val+1'b1) : sin_lut_val;    
+  end
+  
+  case(sin_lut_sel)
+    6'h00 : sin_lut_val <= 16'h0000;
+    6'h01 : sin_lut_val <= 16'h0324;
+    6'h02 : sin_lut_val <= 16'h0648;
+    6'h03 : sin_lut_val <= 16'h096A;
+    6'h04 : sin_lut_val <= 16'h0C8C;
+    6'h05 : sin_lut_val <= 16'h0FAB;
+    6'h06 : sin_lut_val <= 16'h12C8;
+    6'h07 : sin_lut_val <= 16'h15E2;
+    6'h08 : sin_lut_val <= 16'h18F9;
+    6'h09 : sin_lut_val <= 16'h1C0B;
+    6'h0A : sin_lut_val <= 16'h1F1A;
+    6'h0B : sin_lut_val <= 16'h2223;
+    6'h0C : sin_lut_val <= 16'h2528;
+    6'h0D : sin_lut_val <= 16'h2826;
+    6'h0E : sin_lut_val <= 16'h2B1F;
+    6'h0F : sin_lut_val <= 16'h2E11;
+    6'h10 : sin_lut_val <= 16'h30FB;
+    6'h11 : sin_lut_val <= 16'h33DF;
+    6'h12 : sin_lut_val <= 16'h36BA;
+    6'h13 : sin_lut_val <= 16'h398C;
+    6'h14 : sin_lut_val <= 16'h3C56;
+    6'h15 : sin_lut_val <= 16'h3F17;
+    6'h16 : sin_lut_val <= 16'h41CE;
+    6'h17 : sin_lut_val <= 16'h447A;
+    6'h18 : sin_lut_val <= 16'h471C;
+    6'h19 : sin_lut_val <= 16'h49B4;
+    6'h1A : sin_lut_val <= 16'h4C3F;
+    6'h1B : sin_lut_val <= 16'h4EBF;
+    6'h1C : sin_lut_val <= 16'h5133;
+    6'h1D : sin_lut_val <= 16'h539B;
+    6'h1E : sin_lut_val <= 16'h55F5;
+    6'h1F : sin_lut_val <= 16'h5842;
+    6'h20 : sin_lut_val <= 16'h5A82;
+    6'h21 : sin_lut_val <= 16'h5CB3;
+    6'h22 : sin_lut_val <= 16'h5ED7;
+    6'h23 : sin_lut_val <= 16'h60EB;
+    6'h24 : sin_lut_val <= 16'h62F1;
+    6'h25 : sin_lut_val <= 16'h64E8;
+    6'h26 : sin_lut_val <= 16'h66CF;
+    6'h27 : sin_lut_val <= 16'h68A6;
+    6'h28 : sin_lut_val <= 16'h6A6D;
+    6'h29 : sin_lut_val <= 16'h6C23;
+    6'h2A : sin_lut_val <= 16'h6DC9;
+    6'h2B : sin_lut_val <= 16'h6F5E;
+    6'h2C : sin_lut_val <= 16'h70E2;
+    6'h2D : sin_lut_val <= 16'h7254;
+    6'h2E : sin_lut_val <= 16'h73B5;
+    6'h2F : sin_lut_val <= 16'h7504;
+    6'h30 : sin_lut_val <= 16'h7641;
+    6'h31 : sin_lut_val <= 16'h776B;
+    6'h32 : sin_lut_val <= 16'h7884;
+    6'h33 : sin_lut_val <= 16'h7989;
+    6'h34 : sin_lut_val <= 16'h7A7C;
+    6'h35 : sin_lut_val <= 16'h7B5C;
+    6'h36 : sin_lut_val <= 16'h7C29;
+    6'h37 : sin_lut_val <= 16'h7CE3;
+    6'h38 : sin_lut_val <= 16'h7D89;
+    6'h39 : sin_lut_val <= 16'h7E1D;
+    6'h3A : sin_lut_val <= 16'h7E9C;
+    6'h3B : sin_lut_val <= 16'h7F09;
+    6'h3C : sin_lut_val <= 16'h7F61;
+    6'h3D : sin_lut_val <= 16'h7FA6;
+    6'h3E : sin_lut_val <= 16'h7FD8;
+    6'h3F : sin_lut_val <= 16'h7FF5;
+  endcase
+end
+
+endmodule
